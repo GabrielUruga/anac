@@ -264,3 +264,68 @@ class DDL:
                 # Mensagem para log de erro 
                 message = f'Erro ao criar tabela `{table_name}`'
                 logging.error(message, exc_info=True)
+
+class DML:
+    @staticmethod
+    def load_json_to_bigquery_table(project_name:str, table_name:str, json_file:str, write_type:str = 'WRITE_TRUNCATE_DATA'):
+
+        # Configurando job do BigQuery para ingestão do Dicionário na tabela definida truncando apenas os dados existentes
+        job_config = bigquery.LoadJobConfig(source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON, write_disposition=write_type)
+        
+        # Transformando JSON em Dicionário para realizar ingestão na tabela
+        raw_data = [{keys: v for keys, v in data.items()} for data in json_file]
+        
+        # Contabilizando registros do Dicionário após conversão do JSON
+        total_rows = len(raw_data)
+
+        if total_rows == 0:
+            message = f'A conversão do JSON extraído para Dicionário não possui registros'
+            logging.error(message, exc_info=True)
+        else:
+            # Requisição para carregar os dados do Dicionário na tabela criada
+            job = BigQueryClient.load_table_from_json(raw_data, table_name, job_config=job_config)
+
+            # Requisção para ingestão de dados do JSON na tabela especificda
+            try:
+                job
+
+                # Retornando quantidade de linhas inseridas na tabela
+                inserted_rows = job.result().output_rows
+                
+                # Mensagem para log de sucesso na ingestão do JSON
+                message = f'{inserted_rows} linhas carregadas com sucesso na tabela `{table_name}`'
+                logging.info(message)
+                
+            except Exception:
+                message = f'Erro ao tentar inserir linhas do arquivo JSON na tabela `{table_name}`'
+                logging.error(message, exc_info=True)
+    
+    @staticmethod
+    def load_json_folder_to_bigquery(project_name:str, url: str, json_url:str):
+        json_data = JSON.extract_data_from_json_url(json_url)
+
+        table = DDL.create_bigquery_table_by_json('raw-zone-data', 'anac', url, json_data)
+
+        DML.load_json_to_bigquery_table(project_name, table, json_data, 'WRITE_APPEND')
+    
+    @staticmethod
+    def load_parallell_json_files_to_bigquery(project_name:str, url:str):
+        from concurrent.futures import ThreadPoolExecutor
+
+        folder_reference = '2025'
+
+        folder_url = f'{url}/{folder_reference}/'
+
+        json_urls = JSON.extract_json_url_from_subfolder(folder_url)
+
+        workers_number = 2
+        
+        with ThreadPoolExecutor(max_workers=workers_number) as executor:
+
+            futures = [
+                executor.submit(
+                    DML.load_json_folder_to_bigquery, project_name, url, json_url
+                )
+                
+                for json_url in json_urls
+            ]
