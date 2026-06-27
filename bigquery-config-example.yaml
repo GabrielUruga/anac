@@ -1,0 +1,18 @@
+# Definindo configurações padrões do projeto
+default-config: &defaultConfig
+  dataset-location: "" # Localização onde o Dataset será armazenado no GCP
+  dataset-name: "" # Nome do Dataset
+
+bigquery-projects:
+  - project-name: "" # Nome da camada de dados brutos para receber ingestão 
+    <<: *defaultConfig  
+    url:
+        - "" # Link completo do arquivo JSON
+        - "" # Link completo do arquivo JSON
+    folder-path: 
+        - "" # Link completo da pasta com arquivos JSON
+
+  - project-name: "" # Nome da camada com a versão tratada dos dados brutos e a fonte da verdade (Trusted)
+    <<: *defaultConfig
+  - project-name: "" # Nome da camada com regras negociais aplicadas (Refined)
+    <<: *defaultConfig
