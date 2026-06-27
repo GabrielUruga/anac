@@ -301,10 +301,10 @@ class DML:
                 logging.error(message, exc_info=True)
     
     @staticmethod
-    def load_json_folder_to_bigquery(project_name:str, url: str, json_url:str):
+    def load_json_folder_to_bigquery(project_name:str, dataset_name: str, url: str, json_url:str):
         json_data = JSON.extract_data_from_json_url(json_url)
 
-        table = DDL.create_bigquery_table_by_json('raw-zone-data', 'anac', url, json_data)
+        table = DDL.create_bigquery_table_by_json(project_name, dataset_name, url, json_data)
 
         DML.load_json_to_bigquery_table(project_name, table, json_data, 'WRITE_APPEND')
     
