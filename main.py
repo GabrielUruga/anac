@@ -2,7 +2,7 @@
 from dotenv import load_dotenv
 from os import getenv
 import yaml
-from utils_dev import JSON, DDL, DML, GCS
+from utils import JSON, DDL, DML, GCS
 
 # Carregando variáveis de ambiente
 load_dotenv()
